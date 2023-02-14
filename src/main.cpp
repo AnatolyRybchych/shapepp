@@ -25,9 +25,7 @@ public:
             else{
                 on_render();
             }
-            
         }
-        
     }
 private:
     void on_event(const SDL_Event &ev){

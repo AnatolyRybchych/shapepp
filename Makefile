@@ -5,6 +5,8 @@ CARGS   := $(shell pkg-config --cflags gl sdl2 glew) $(INCLUDE) -ggdb -Wall -Wex
 OUT     := run
 
 objects += main.o
+objects += glutil/Shader.o
+objects += glutil/Program.o
 
 build: $(addprefix obj/, $(objects))
 	@mkdir -p $(dir ./$(OUT))
