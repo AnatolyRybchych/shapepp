@@ -1,7 +1,7 @@
 CC      := g++
 INCLUDE := -Iinclude
-LIBS    := 
-CARGS   := $(INCLUDE) -ggdb -Wall -Wextra -Werror -pedantic -std=c++11
+LIBS    := $(shell pkg-config --libs gl sdl2 glew)
+CARGS   := $(shell pkg-config --cflags gl sdl2 glew) $(INCLUDE) -ggdb -Wall -Wextra -Werror -pedantic -std=c++11
 OUT     := run
 
 objects += main.o
