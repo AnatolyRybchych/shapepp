@@ -35,15 +35,15 @@ Program Program::link_new(const Shader *shader,...){
 }
 
 Program Program::link_new(const Shader &first){
-    return link_new(&first);
+    return link_new(&first, nullptr);
 }
 
 Program Program::link_new(const Shader &first, const Shader &second){
-    return link_new(&first, &second);
+    return link_new(&first, &second, nullptr);
 }
 
 Program Program::link_new(const Shader &first, const Shader &second, const Shader &third){
-    return link_new(&first, &second, &third);
+    return link_new(&first, &second, &third, nullptr);
 }
 
 //logic_error if already created 

@@ -7,9 +7,14 @@ namespace GlUtil{
     public:
         Program() noexcept;
         Program(GLuint id) noexcept;
-
+        
+        //logic_error if link error
         static Program link_new(const Shader &first);
+
+        //logic_error if link error
         static Program link_new(const Shader &first, const Shader &second);
+
+        //logic_error if link error
         static Program link_new(const Shader &first, const Shader &second, const Shader &third);
 
         //logic_error if already created 
