@@ -1,12 +1,13 @@
 CC      := g++
 INCLUDE := -Iinclude
-LIBS    := $(shell pkg-config --libs gl sdl2 glew)
+LIBS    := $(shell pkg-config --libs gl sdl2 glew) -lm
 CARGS   := $(shell pkg-config --cflags gl sdl2 glew) $(INCLUDE) -ggdb -Wall -Wextra -Werror -pedantic -std=c++11
 OUT     := run
 
 objects += main.o
 objects += glutil/Shader.o
 objects += glutil/Program.o
+objects += Shape.o
 
 build: $(addprefix obj/, $(objects))
 	@mkdir -p $(dir ./$(OUT))

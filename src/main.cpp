@@ -1,8 +1,18 @@
 #include <iostream>
-#include <SDL2/SDL.h>
+#include <fstream>
+#include <array>
+
 #include <GL/glew.h>
+#include <SDL2/SDL.h>
 
 #include "glutil/Program.hpp"
+#include "Shape.hpp"
+
+enum Texture{
+    TEXTURE_SHAPE,
+
+    TEXTRES_COUNT,
+};
 
 class App{
 public:
@@ -30,35 +40,27 @@ public:
                 on_render();
             }
         }
+
+        on_destruct();
     }
 private:
     void on_init(){
-        GlUtil::Shader vert = GlUtil::Shader::compile_new(
-            GL_VERTEX_SHADER, R"GLSL(
-                #version 110
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                attribute vec4 v_pos;
+        renderer.init();
+        
+        glGenTextures(textures.size(), &textures[0]);
 
-                void main(){
-                    gl_Position = v_pos;
-                }
-            )GLSL"
-        );
+        FILE *circle = fopen("circle.shape", "rb");
+        Shape s(circle);
+        fclose(circle);
 
-        GlUtil::Shader frag = GlUtil::Shader::compile_new(
-            GL_FRAGMENT_SHADER, R"GLSL(
-                #version 110
+        renderer.shape_texture(s, textures[TEXTURE_SHAPE]);
+    }
 
-                void main(){
-                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-                }
-            )GLSL"
-        );
-
-        prog = GlUtil::Program::link_new(vert, frag);
-
-        vert.delete_shader();
-        frag.delete_shader();
+    void on_destruct(){
+        glDeleteTextures(textures.size(), &textures[0]);
     }
 
     void on_event(const SDL_Event &ev){
@@ -83,27 +85,13 @@ private:
     void on_render(){
         glClear(GL_COLOR_BUFFER_BIT);
 
-        prog.use();
-        GLint v_pos = prog.attrib_location("v_pos");
-        glEnableVertexAttribArray(v_pos);
-        float vertices[] = {
-            0.1, 0.8,
-            -0.8, -0.7,
-            0.8, -0.7,
-        };
-
-        glVertexAttribPointer(v_pos, 2, GL_FLOAT, GL_FALSE, 0, vertices);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        glDisableVertexAttribArray(v_pos);
-        prog.unuse();
+        renderer.render(textures[TEXTURE_SHAPE], std::array<float, 4>{1,0,0,1}, 0.5);
 
         SDL_GL_SwapWindow(window);
     }
 
-    
-    GlUtil::Program prog;
+    Shape::Renderer renderer;
+    std::array<GLuint, Texture::TEXTRES_COUNT> textures;
     bool alive;
     SDL_Window *window;
 };
