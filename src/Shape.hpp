@@ -4,6 +4,7 @@
 #include <vector>
 #include <ios>
 #include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
 #include "glutil/Program.hpp"
 
 class Shape{
@@ -38,20 +39,22 @@ public:
     //can be called to destroy in spcific place (for better managing GlContext)
     void uninit();
 
-    void render(GLuint shape_texture, glm::vec4 color, float power) const noexcept;
-    void render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color , float power, float progress) const noexcept;
+    void render(GLuint shape_texture, glm::vec4 &color, float power, glm::mat4 &mvp) const noexcept;
+    void render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 &color , float power, float progress, glm::mat4 &mvp) const noexcept;
 
     void shape_texture(const Shape &shape, GLuint &texture) const noexcept;
     bool is_init() const noexcept;
 private:
     GlUtil::Program prog_render;
         GLint pr_v_pos;
+        GLint pr_v_mvp;
         GLint pr_f_color;
         GLint pr_f_power;
         GLint pr_f_shape;
     
     GlUtil::Program prog_morph;
         GLint pm_v_pos;
+        GLint pm_v_mvp;
         GLint pm_f_color;
         GLint pm_f_power;
         GLint pm_f_shape1;

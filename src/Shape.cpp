@@ -18,7 +18,6 @@ Shape::Shape(std::size_t width, std::size_t height) noexcept{
     }
 }
 
-
 Shape::Shape(FILE *stream){
     init_from_stream(stream);   
 }
@@ -116,14 +115,16 @@ void Shape::Renderer::init(){
         #version 110
 
         attribute vec4 v_pos;
+        uniform mat4 v_mvp;
         
         varying vec2 f_pos;
         varying vec2 f_uvpos;
 
         void main(){
-            f_pos = v_pos.xy;
+            vec4 pos = v_pos * v_mvp;
             f_uvpos = v_pos.xy * vec2(0.5) + vec2(0.5);
-            gl_Position = v_pos;
+            f_pos = pos.xy;
+            gl_Position = pos;
         }
     )GLSL");
 
@@ -175,11 +176,13 @@ void Shape::Renderer::init(){
     frag.delete_shader();
 
     pr_v_pos = prog_render.attrib_location("v_pos");
+    pr_v_mvp = prog_render.uniform_location("v_mvp");
     pr_f_color = prog_render.uniform_location("f_color");
     pr_f_power = prog_render.uniform_location("f_power");
     pr_f_shape = prog_render.uniform_location("f_shape");
 
     pm_v_pos = prog_morph.attrib_location("v_pos");
+    pm_v_mvp = prog_morph.uniform_location("v_mvp");
     pm_f_color = prog_morph.uniform_location("f_color");
     pm_f_power = prog_morph.uniform_location("f_power");
     pm_f_shape1 = prog_morph.uniform_location("f_shape1");
@@ -204,7 +207,7 @@ bool Shape::Renderer::is_init() const noexcept{
     return _is_init;
 }
 
-void Shape::Renderer::render(GLuint shape_texture, glm::vec4 color, float power) const noexcept{
+void Shape::Renderer::render(GLuint shape_texture, glm::vec4 &color, float power, glm::mat4 &mvp) const noexcept{
     if(!is_init()) return;
 
     GLint vp[4];
@@ -221,6 +224,7 @@ void Shape::Renderer::render(GLuint shape_texture, glm::vec4 color, float power)
     glUniform1i(pr_f_shape, 0);
     glUniform4f(pr_f_color, color.r, color.g, color.b, color.a);
     glUniform1f(pr_f_power, actual_power);
+    glUniformMatrix4fv(pr_v_mvp, 1, GL_FALSE, &mvp[0][0]);
     
     glEnableVertexAttribArray(pr_v_pos);
     float vertices[] = {
@@ -236,8 +240,7 @@ void Shape::Renderer::render(GLuint shape_texture, glm::vec4 color, float power)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color , float power, float progress) const noexcept
-{
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 &color , float power, float progress, glm::mat4 &mvp) const noexcept{
     if(!is_init()) return;
 
     GLint vp[4];
@@ -259,6 +262,7 @@ void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2,
     glUniform4f(pm_f_color, color.r, color.g, color.b, color.a);
     glUniform1f(pm_f_power, actual_power);
     glUniform1f(pm_f_progress, progress);
+    glUniformMatrix4fv(pm_v_mvp, 1, GL_FALSE, &mvp[0][0]);
     
     glEnableVertexAttribArray(pm_v_pos);
     float vertices[] = {
