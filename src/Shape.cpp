@@ -236,16 +236,16 @@ void Shape::Renderer::render(GLuint shape_texture, glm::vec4 color, float power)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color1, glm::vec4 color2, float power1, float power2, float progress) const noexcept
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color , float power, float progress) const noexcept
 {
     if(!is_init()) return;
 
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
 
-    float actual_power = glm::mix(power1, power2, progress);
-    if(rel_to_width) actual_power *= vp[2];
-    else actual_power *= vp[3];
+    float actual_power;
+    if(rel_to_width) actual_power = vp[2] * power;
+    else actual_power = vp[3] * power;
 
     prog_morph.use();
     glActiveTexture(GL_TEXTURE0);
@@ -256,10 +256,7 @@ void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2,
 
     glUniform1i(pm_f_shape1, 0);
     glUniform1i(pm_f_shape2, 1);
-
-    glm::vec4 color = glm::mix(color1, color2, progress);
     glUniform4f(pm_f_color, color.r, color.g, color.b, color.a);
-    
     glUniform1f(pm_f_power, actual_power);
     glUniform1f(pm_f_progress, progress);
     

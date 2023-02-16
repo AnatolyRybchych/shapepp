@@ -39,7 +39,7 @@ public:
     void uninit();
 
     void render(GLuint shape_texture, glm::vec4 color, float power) const noexcept;
-    void render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color1, glm::vec4 color2, float power1, float power2, float progress) const noexcept;
+    void render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color , float power, float progress) const noexcept;
 
     void shape_texture(const Shape &shape, GLuint &texture) const noexcept;
     bool is_init() const noexcept;

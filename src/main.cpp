@@ -85,7 +85,7 @@ private:
     void on_render(){
         glClear(GL_COLOR_BUFFER_BIT);
 
-        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], glm::vec4(1, 0, 0, 1), glm::vec4(0, 1, 0, 1), 0.5, 0.5, sinf(SDL_GetTicks() * 0.005));
+        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], glm::vec4(1, 0, 0, 1), 0.5, sinf(SDL_GetTicks() * 0.005));
 
         SDL_GL_SwapWindow(window);
     }
