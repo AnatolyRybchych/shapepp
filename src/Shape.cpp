@@ -3,6 +3,9 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <string.h>
+#include <errno.h>
+#include <glm/glm.hpp>
 
 static const std::array<char, 8> SHAPE_MAGIC{'S', 'H', 'A', 'P', 'E', ' ', '\n', '\0'};
 
@@ -17,7 +20,55 @@ Shape::Shape(std::size_t width, std::size_t height) noexcept{
 
 
 Shape::Shape(FILE *stream){
-    std::array<char, 8> magic;
+    init_from_stream(stream);   
+}
+
+Shape::Shape(const char *file){
+    FILE *f = fopen(file, "rb");
+
+    if(f){
+        try{
+            init_from_stream(f);
+        }
+        catch (std::exception &){
+            fclose(f);
+            throw;
+        }
+        fclose(f);   
+    }
+    else{
+        throw std::runtime_error(strerror(errno));
+    }
+}
+
+Shape::Shape(std::vector<uint8_t> data){
+    FILE *f = fmemopen(data.data(), data.size(), "rb");
+
+    if(f){
+        try{
+            init_from_stream(f);
+        }
+        catch (std::exception &){
+            fclose(f);
+            throw;
+        }
+        fclose(f);
+    }
+    else{
+        throw std::runtime_error(strerror(errno));
+    }
+}
+
+std::size_t Shape::get_width() const noexcept{
+    return this->width;
+}
+
+std::size_t Shape::get_height() const noexcept{
+    return this->height;
+}
+
+void Shape::init_from_stream(FILE *stream){
+    std::array<char, 8> magic{};
     fread(&magic[0], 1, magic.size(), stream);
 
     if(magic != SHAPE_MAGIC){
@@ -40,17 +91,6 @@ Shape::Shape(FILE *stream){
         throw std::runtime_error("cannot read stream completely");
     }
 }
-
-std::size_t Shape::get_width() const noexcept{
-    return this->width;
-}
-
-std::size_t Shape::get_height() const noexcept{
-    return this->height;
-}
-
-
-
 
 
 Shape::Renderer::Renderer() noexcept{
@@ -104,7 +144,33 @@ void Shape::Renderer::init(){
             gl_FragColor = vec4(f_color.rgb, mask);
         }
     )GLSL");
+
     prog_render = GlUtil::Program::link_new(vert, frag);
+
+    frag.delete_shader();
+    frag = GlUtil::Shader::compile_new(
+    GL_FRAGMENT_SHADER,
+    R"GLSL(
+        #version 110
+
+        uniform vec4 f_color;
+        uniform float f_power;
+        uniform sampler2D f_shape1;
+        uniform sampler2D f_shape2;
+        uniform float f_progress;
+
+        varying vec2 f_pos;
+        varying vec2 f_uvpos;
+
+        void main(){
+            float shape = mix(texture2D(f_shape1, f_uvpos).r, texture2D(f_shape2, f_uvpos).r, f_progress);
+            float mask = clamp(shape * f_power, -1.0, 1.0) * f_color.a;
+            gl_FragColor = vec4(f_color.rgb, mask);
+        }
+    )GLSL");
+    
+    prog_morph = GlUtil::Program::link_new(vert, frag);
+
     vert.delete_shader();
     frag.delete_shader();
 
@@ -112,6 +178,13 @@ void Shape::Renderer::init(){
     pr_f_color = prog_render.uniform_location("f_color");
     pr_f_power = prog_render.uniform_location("f_power");
     pr_f_shape = prog_render.uniform_location("f_shape");
+
+    pm_v_pos = prog_morph.attrib_location("v_pos");
+    pm_f_color = prog_morph.uniform_location("f_color");
+    pm_f_power = prog_morph.uniform_location("f_power");
+    pm_f_shape1 = prog_morph.uniform_location("f_shape1");
+    pm_f_shape2 = prog_morph.uniform_location("f_shape2");
+    pm_f_progress = prog_morph.uniform_location("f_progress");
 
     _is_init = true;
 }
@@ -131,7 +204,7 @@ bool Shape::Renderer::is_init() const noexcept{
     return _is_init;
 }
 
-void Shape::Renderer::render(GLuint shape_texture, const std::array<float, 4> color, float power) const noexcept{
+void Shape::Renderer::render(GLuint shape_texture, glm::vec4 color, float power) const noexcept{
     if(!is_init()) return;
 
     GLint vp[4];
@@ -146,7 +219,7 @@ void Shape::Renderer::render(GLuint shape_texture, const std::array<float, 4> co
     glBindTexture(GL_TEXTURE_2D, shape_texture);
 
     glUniform1i(pr_f_shape, 0);
-    glUniform4f(pr_f_color, color[0], color[1], color[2], color[3]);
+    glUniform4f(pr_f_color, color.r, color.g, color.b, color.a);
     glUniform1f(pr_f_power, actual_power);
     
     glEnableVertexAttribArray(pr_v_pos);
@@ -160,6 +233,47 @@ void Shape::Renderer::render(GLuint shape_texture, const std::array<float, 4> co
 
     glDisableVertexAttribArray(pr_v_pos);
     prog_render.unuse();
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color1, glm::vec4 color2, float power1, float power2, float progress) const noexcept
+{
+    if(!is_init()) return;
+
+    GLint vp[4];
+    glGetIntegerv(GL_VIEWPORT, vp);
+
+    float actual_power = glm::mix(power1, power2, progress);
+    if(rel_to_width) actual_power *= vp[2];
+    else actual_power *= vp[3];
+
+    prog_morph.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, shape_texture1);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, shape_texture2);
+
+    glUniform1i(pm_f_shape1, 0);
+    glUniform1i(pm_f_shape2, 1);
+
+    glm::vec4 color = glm::mix(color1, color2, progress);
+    glUniform4f(pm_f_color, color.r, color.g, color.b, color.a);
+    
+    glUniform1f(pm_f_power, actual_power);
+    glUniform1f(pm_f_progress, progress);
+    
+    glEnableVertexAttribArray(pm_v_pos);
+    float vertices[] = {
+        -1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
+        -1.0, 1.0, -1.0, -1.0, 1.0, -1.0,
+    };
+    glVertexAttribPointer(pm_v_pos, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisableVertexAttribArray(pm_v_pos);
+    prog_morph.unuse();
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <ios>
+#include <glm/vec4.hpp>
 #include "glutil/Program.hpp"
 
 class Shape{
@@ -11,6 +12,8 @@ public:
 
     Shape(std::size_t width, std::size_t height) noexcept;
     Shape(FILE *stream);
+    Shape(std::vector<uint8_t> data);
+    Shape(const char *file);
     virtual ~Shape() noexcept = default;
 
     std::size_t get_width() const noexcept;
@@ -18,6 +21,8 @@ public:
 protected:
     std::vector<float> fragments;
 private:
+    void init_from_stream(FILE *stream);
+
     std::size_t width;
     std::size_t height;
 };
@@ -33,7 +38,8 @@ public:
     //can be called to destroy in spcific place (for better managing GlContext)
     void uninit();
 
-    void render(GLuint shape_texture, const std::array<float, 4> color, float power) const noexcept;
+    void render(GLuint shape_texture, glm::vec4 color, float power) const noexcept;
+    void render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 color1, glm::vec4 color2, float power1, float power2, float progress) const noexcept;
 
     void shape_texture(const Shape &shape, GLuint &texture) const noexcept;
     bool is_init() const noexcept;
@@ -43,6 +49,14 @@ private:
         GLint pr_f_color;
         GLint pr_f_power;
         GLint pr_f_shape;
+    
+    GlUtil::Program prog_morph;
+        GLint pm_v_pos;
+        GLint pm_f_color;
+        GLint pm_f_power;
+        GLint pm_f_shape1;
+        GLint pm_f_shape2;
+        GLint pm_f_progress;
 
     bool rel_to_width;
     bool _is_init;

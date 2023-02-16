@@ -10,6 +10,7 @@
 
 enum Texture{
     TEXTURE_SHAPE,
+    TEXTURE_SHAPE2,
 
     TEXTRES_COUNT,
 };
@@ -51,12 +52,11 @@ private:
         renderer.init();
         
         glGenTextures(textures.size(), &textures[0]);
-
-        FILE *circle = fopen("circle.shape", "rb");
-        Shape s(circle);
-        fclose(circle);
+        Shape s("circle.shape");
+        Shape s2("circle2.shape");
 
         renderer.shape_texture(s, textures[TEXTURE_SHAPE]);
+        renderer.shape_texture(s2, textures[TEXTURE_SHAPE2]);
     }
 
     void on_destruct(){
@@ -85,7 +85,7 @@ private:
     void on_render(){
         glClear(GL_COLOR_BUFFER_BIT);
 
-        renderer.render(textures[TEXTURE_SHAPE], std::array<float, 4>{1,0,0,1}, 0.5);
+        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], glm::vec4(1, 0, 0, 1), glm::vec4(0, 1, 0, 1), 0.5, 0.5, sinf(SDL_GetTicks() * 0.005));
 
         SDL_GL_SwapWindow(window);
     }
