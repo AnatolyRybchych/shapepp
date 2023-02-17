@@ -58,6 +58,24 @@ Shape::Shape(std::vector<uint8_t> data){
     }
 }
 
+void Shape::draw_circle(glm::vec2 circle_pos, float cr) noexcept{
+    for(std::size_t x = 0; x < get_width(); x++){
+        for(std::size_t y = 0; y < get_height(); y++){
+            glm::vec2 gl_pos(
+                2 * x / (float)get_width() - 1.0,
+                2 * y / (float)get_height() - 1.0
+            );
+            
+            float circle_dst = cr - glm::distance(gl_pos, circle_pos);
+            float &prev = fragments[y * get_width() + x];
+
+            if(circle_dst > prev){
+                prev = circle_dst;
+            }
+        }
+    }
+}
+
 std::size_t Shape::get_width() const noexcept{
     return this->width;
 }

@@ -18,6 +18,9 @@ public:
     Shape(const char *file);
     virtual ~Shape() noexcept = default;
 
+    //uses cpu
+    void draw_circle(glm::vec2 circle_pos, float cr) noexcept;
+
     std::size_t get_width() const noexcept;
     std::size_t get_height() const noexcept;
 protected:
