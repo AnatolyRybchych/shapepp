@@ -292,6 +292,14 @@ void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2,
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, const glm::vec4 &color , float power, float progress, const glm::mat4 &mvp) const noexcept{
+    render_morph(shape_texture1, shape_texture2, color, power, progress, mvp, IDENTITY);
+}
+
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, const glm::vec4 &color , float power, float progress) const noexcept{
+    render_morph(shape_texture1, shape_texture2, color, power, progress, IDENTITY, IDENTITY);
+}
+
 void Shape::Renderer::shape_texture(const Shape &shape, GLuint &texture) const noexcept{
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
