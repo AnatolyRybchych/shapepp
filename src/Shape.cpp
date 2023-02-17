@@ -116,13 +116,14 @@ void Shape::Renderer::init(){
 
         attribute vec4 v_pos;
         uniform mat4 v_mvp;
+        uniform mat4 v_tex_mvp;
         
         varying vec2 f_pos;
         varying vec2 f_uvpos;
 
         void main(){
             vec4 pos = v_pos * v_mvp;
-            f_uvpos = v_pos.xy * vec2(0.5) + vec2(0.5);
+            f_uvpos = (vec4(v_pos.xy, 1, 1) * v_tex_mvp).xy  * vec2(0.5) + vec2(0.5);
             f_pos = pos.xy;
             gl_Position = pos;
         }
@@ -177,12 +178,14 @@ void Shape::Renderer::init(){
 
     pr_v_pos = prog_render.attrib_location("v_pos");
     pr_v_mvp = prog_render.uniform_location("v_mvp");
+    pr_v_tex_mvp = prog_render.uniform_location("v_tex_mvp");
     pr_f_color = prog_render.uniform_location("f_color");
     pr_f_power = prog_render.uniform_location("f_power");
     pr_f_shape = prog_render.uniform_location("f_shape");
 
     pm_v_pos = prog_morph.attrib_location("v_pos");
     pm_v_mvp = prog_morph.uniform_location("v_mvp");
+    pm_v_tex_mvp = prog_morph.uniform_location("v_tex_mvp");
     pm_f_color = prog_morph.uniform_location("f_color");
     pm_f_power = prog_morph.uniform_location("f_power");
     pm_f_shape1 = prog_morph.uniform_location("f_shape1");
@@ -207,7 +210,7 @@ bool Shape::Renderer::is_init() const noexcept{
     return _is_init;
 }
 
-void Shape::Renderer::render(GLuint shape_texture, glm::vec4 &color, float power, glm::mat4 &mvp) const noexcept{
+void Shape::Renderer::render(GLuint shape_texture, const glm::vec4 &color, float power, const glm::mat4 &mvp, const glm::mat4 &tex_mvp) const noexcept{
     if(!is_init()) return;
 
     GLint vp[4];
@@ -225,6 +228,7 @@ void Shape::Renderer::render(GLuint shape_texture, glm::vec4 &color, float power
     glUniform4f(pr_f_color, color.r, color.g, color.b, color.a);
     glUniform1f(pr_f_power, actual_power);
     glUniformMatrix4fv(pr_v_mvp, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(pr_v_tex_mvp, 1, GL_FALSE, &tex_mvp[0][0]);
     
     glEnableVertexAttribArray(pr_v_pos);
     float vertices[] = {
@@ -240,7 +244,16 @@ void Shape::Renderer::render(GLuint shape_texture, glm::vec4 &color, float power
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, glm::vec4 &color , float power, float progress, glm::mat4 &mvp) const noexcept{
+void Shape::Renderer::render(GLuint shape_texture, const glm::vec4 &color, float power, const glm::mat4 &mvp) const noexcept{
+    render(shape_texture, color, power, mvp, IDENTITY);
+}
+
+void Shape::Renderer::render(GLuint shape_texture, const glm::vec4 &color, float power) const noexcept{
+    render(shape_texture, color, power, IDENTITY, IDENTITY);
+}
+
+
+void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2, const glm::vec4 &color , float power, float progress, const glm::mat4 &mvp, const glm::mat4 &tex_mvp) const noexcept{
     if(!is_init()) return;
 
     GLint vp[4];
@@ -263,6 +276,7 @@ void Shape::Renderer::render_morph(GLuint shape_texture1, GLuint shape_texture2,
     glUniform1f(pm_f_power, actual_power);
     glUniform1f(pm_f_progress, progress);
     glUniformMatrix4fv(pm_v_mvp, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(pm_v_tex_mvp, 1, GL_FALSE, &tex_mvp[0][0]);
     
     glEnableVertexAttribArray(pm_v_pos);
     float vertices[] = {
@@ -282,6 +296,8 @@ void Shape::Renderer::shape_texture(const Shape &shape, GLuint &texture) const n
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, shape.get_width(), shape.get_height(), 0, GL_RED, GL_FLOAT, shape.fragments.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 }

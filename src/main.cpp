@@ -92,7 +92,7 @@ private:
         float progress = sinf(SDL_GetTicks() * 0.005) * 0.5 + 0.5;
         mvp = glm::rotate(mvp, progress * glm::pi<float>(), rotation);
         glm::vec4 color(1, 0, 0, 1);
-        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], color, 0.5, progress, mvp);
+        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], color, 0.5, progress, renderer.IDENTITY, mvp);
 
         SDL_GL_SwapWindow(window);
     }
