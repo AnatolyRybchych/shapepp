@@ -43,3 +43,6 @@ SDL_GL_SwapWindow(window);
 ```
 > thumbnail (only 15 fps)
 ![circles](/thumbnails/circles_15fps.gif)
+
+> pixel image (if set texture filtering on GL_NEAREST and power paramter >= 2.0 in render method)
+![pixel circles](/thumbnails/pixel_circles_15fps.gif)

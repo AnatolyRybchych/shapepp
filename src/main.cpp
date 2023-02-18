@@ -67,6 +67,16 @@ private:
         renderer.shape_texture(s2, textures[TEXTURE_SHAPE2]);
 
         s.write_to_file("test.circle");
+
+        glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_SHAPE]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_SHAPE2]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void on_destruct(){
@@ -105,7 +115,7 @@ private:
         mvp = glm::rotate(mvp, time, rotation);
 
         glm::vec4 color(0.2, 0.4, 0.8, 1);
-        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], color, 0.5, progress, mvp);
+        renderer.render_morph(textures[TEXTURE_SHAPE], textures[TEXTURE_SHAPE2], color, 2, progress, mvp);
 
         SDL_GL_SwapWindow(window);
     }
