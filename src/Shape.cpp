@@ -18,8 +18,13 @@ Shape::Shape(std::size_t width, std::size_t height) noexcept{
     }
 }
 
-Shape::Shape(FILE *stream){
-    init_from_stream(stream);   
+Shape::Shape(FILE *stream, bool magic){
+    if(magic){
+        init_from_stream(stream); 
+    }
+    else{
+        init_from_stream_without_magic(stream);
+    }
 }
 
 Shape::Shape(const char *file){
@@ -40,12 +45,17 @@ Shape::Shape(const char *file){
     }
 }
 
-Shape::Shape(std::vector<uint8_t> data){
+Shape::Shape(std::vector<uint8_t> data, bool magic){
     FILE *f = fmemopen(data.data(), data.size(), "rb");
 
     if(f){
         try{
-            init_from_stream(f);
+            if(magic){
+                init_from_stream(f);
+            }
+            else{
+                init_from_stream_without_magic(f);
+            }
         }
         catch (std::exception &){
             fclose(f);
@@ -55,6 +65,33 @@ Shape::Shape(std::vector<uint8_t> data){
     }
     else{
         throw std::runtime_error(strerror(errno));
+    }
+}
+
+void Shape::write_to_stream(FILE *stream, bool write_magic) const{
+    if(write_magic){
+        fwrite("SHAPE \n\0", 1, 8, stream);
+    }
+    fwrite(&width, sizeof(width), 1, stream);
+    fwrite(&height, sizeof(height), 1, stream);
+
+    fwrite(fragments.data(), sizeof(fragments[0]), fragments.size(), stream);
+
+    if(ferror(stream)){
+        throw std::runtime_error(strerror(errno));
+    }
+}
+
+void Shape::write_to_file(const char *file) const{
+    FILE *f = fopen(file, "wb");
+
+    try{
+        write_to_stream(f);
+        fclose(f);
+    }
+    catch(std::exception &){
+        fclose(f);
+        throw;
     }
 }
 
@@ -88,10 +125,18 @@ void Shape::init_from_stream(FILE *stream){
     std::array<char, 8> magic{};
     fread(&magic[0], 1, magic.size(), stream);
 
+    if(ferror(stream)){
+        throw std::runtime_error(strerror(errno));
+    }
+
     if(magic != SHAPE_MAGIC){
         throw std::invalid_argument("shape magic mismatch");
     }
 
+    init_from_stream_without_magic(stream);
+}
+
+void Shape::init_from_stream_without_magic(FILE *stream){
     uint32_t w, h;
     fread(&w, sizeof(w), 1, stream);
     fread(&h, sizeof(h), 1, stream);
@@ -105,7 +150,7 @@ void Shape::init_from_stream(FILE *stream){
     }
 
     if(ferror(stream)){
-        throw std::runtime_error("cannot read stream completely");
+        throw std::runtime_error(strerror(errno));
     }
 }
 

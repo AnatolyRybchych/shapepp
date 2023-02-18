@@ -65,6 +65,8 @@ private:
 
         renderer.shape_texture(s, textures[TEXTURE_SHAPE]);
         renderer.shape_texture(s2, textures[TEXTURE_SHAPE2]);
+
+        s.write_to_file("test.circle");
     }
 
     void on_destruct(){

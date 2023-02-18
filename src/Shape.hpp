@@ -13,10 +13,13 @@ public:
     class Renderer;
 
     Shape(std::size_t width, std::size_t height) noexcept;
-    Shape(FILE *stream);
-    Shape(std::vector<uint8_t> data);
+    Shape(FILE *stream, bool magic = true);
+    Shape(std::vector<uint8_t> data, bool magic = true);
     Shape(const char *file);
     virtual ~Shape() noexcept = default;
+
+    void write_to_stream(FILE *stream, bool write_magic = true) const;
+    void write_to_file(const char *file) const;
 
     //uses cpu
     void draw_circle(glm::vec2 circle_pos, float cr) noexcept;
@@ -27,6 +30,7 @@ protected:
     std::vector<float> fragments;
 private:
     void init_from_stream(FILE *stream);
+    void init_from_stream_without_magic(FILE *stream);
 
     std::size_t width;
     std::size_t height;
